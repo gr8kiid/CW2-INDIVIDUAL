@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Lessons</title>
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://unpkg.com/vue"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css"
+        integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer">
+
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.10/dist/vue.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-GLhlTQ8iRABdZLl6O3oVMWSktQOp6b7In1Zl3/Jr59b6EGGoI1aFkw7cmDA6j6gD" crossorigin="anonymous">
+
+
+</head>
+
+<body>
+    <div id="store">
+        <div class="container">
+            <!-- Navigation Bar -->
+            <nav class="navbar navbar-expand-lg navbar-light">
+                <a class="navbar-brand" href="#">Lessons</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-between" id="navbarSupportedContent">
+                    <form class="form-inline my-2 my-lg-0 mx-auto">
+                        <input v-model="searchQuery" @input="searchLessons" class="form-control mr-sm-2" type="search"
+                            placeholder="Search" aria-label="Search">
+                    </form>
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <button class="btn btn-primary my-2 my-sm-0" v-bind:disabled="!isCartValid"
+                                @click="showCheckout = true">
+                                <i class="fas fa-shopping-cart"></i> Cart {{ cartCount }}
+                            </button>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+
+
+
+        </div>
+        <!-- Product Display -->
+        <div v-if="!showCheckout" class="container mt-4">
+            <div v-for="product in products">
+                <div class="card mb-4" style="width: 18rem;">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.topic }}</h5>
+                        <p class="card-text">Location: {{ product.location }}</p>
+                        <p class="card-text">Price: {{ product.price }}</p>
+                        <p class="card-text">Space: {{ product.space }}</p>
+                        <button class="btn btn-primary" :disabled="isDisabled(product)" @click="addToCart(product)">Add
+                            to Cart</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Checkout Display -->
+        <div v-if="showCheckout" class="container mt-4">
+            <h3>Checkout</h3>
+            <form>
+                <div class="form-group">
+                    <label for="name">Name</label>
+                    <input type="text" class="form-control" id="name" v-model="customer.name">
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone</label>
+                    <input type="text" class="form-control" id="phone" v-model="customer.phone">
+                </div>
+            </form>
+            <hr>
+            <div class="card w-100">
+                <h3 class="card-header">
+                    Cart
+                </h3>
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th scope="col">Topic</th>
+                            <th scope="col">Price</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">#</th>
+                        </tr>
+                    </thead>
+                    <tbody v-if="cart.length">
+                        <tr v-for="item in cart">
+                            <td>{{ item.product.topic }}</td>
+                            <td>{{ item.product.price }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td scope="row"><button class="btn btn-danger" @click="deleteFromCart(item)">Delete</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tbody v-else>
+                        <tr>
+                            <td colspan="4" class="text-center">Please add products to the cart.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+
+            <button class="btn btn-primary mt-4" :disabled="!customer.name || !customer.phone"
+                @click="submitOrder">Submit Order</button>
+
+            <button class="btn btn-primary mt-4" @click="showCheckout = false">Back to Products</button>
+        </div>
+    </div>
+    <!-- Link to Bootstrap JS library -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-w76AqPfDkMBDXo30jS1Sgez6pr3x5MlQ1ZAGC+nuZB+EYdgRZgiwxhTBTkF7CXvN"
+        crossorigin="anonymous"></script>
+    <script>
+        let store = new Vue({
+            el: '#store',
+            data: {
+                products: [],
+                cart: [],
+                showCheckout: false,
+                customer: {
+                    name: '',
+                    phone: ''
+                },
+                searchQuery: ''
+            },
+            computed: {
+                isCartValid() {
+                    return this.cart.length > 0;
+                },
+                cartCount: function () {
+                    return this.cart.reduce((total, item) => total + item.quantity, 0);
+                }
+            },
+            created: function () {
+                console.log('requesting data from server ...');
+
+                fetch('http://localhost:3000/lessons').then(
+                    function (response) {
+                        response.json().then(
+                            function (json) {
+                                // "store" is vue instance
+                                store.products = json;
+                                console.log(json);
+                            });
+                    }
+                )
+            },
+            methods: {
+                deleteFromCart: function (item) {
+                    if (item.quantity > 1) {
+                        item.quantity--;
+                    } else {
+                        let index = this.cart.indexOf(item);
+                        this.cart.splice(index, 1);
+                    }
+                }
+                ,
+
+                addToCart: function (product) {
+                    if (product.space > 0) {
+                        // decrease product space by 1
+                        product.space--;
+                        // Check if the product is already in the cart
+                        let productInCart = this.cart.find(item => item.product._id === product._id);
+                        if (productInCart) {
+                            // Increase the quantity of the existing product by 1
+                            productInCart.quantity++;
+                        } else {
+                            // Add the product to the cart with quantity = 1
+                            this.cart.push({
+                                product: product,
+                                quantity: 1
+                            });
+                        }
+                    }
+                    console.log(JSON.stringify(this.cart));
+                },
+                submitOrder() {
+                    // Check if the customer's name and phone are entered
+                    // If either of them is missing, display an error message to the customer
+                    if (this.customer.name === '' || this.customer.phone === '') {
+                        alert("Please enter both name and phone number to proceed with the order.");
+                    } else {
+                        // Create an order object with customer name, phone, and lessons
+                        const order = {
+                            name: this.customer.name,
+                            phone: this.customer.phone,
+                            lessons: this.cart.map(item => {
+                                // Return an object for each lesson in the cart, with lesson ID, space, and quantity
+                                return {
+                                    lessonId: item.product._id,
+                                    space: item.product.space,
+                                    quantity: item.quantity
+                                }
+                            })
+                        };
+
+                        // POST the order to the server at the specified endpoint
+                        fetch('http://localhost:3000/orders', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(order)
+                        }).then(response => {
+                            // If the response is okay (status code 200-299), update the lessons' space on the server
+                            if (response.ok) {
+                                this.cart.forEach(item => {
+                                    fetch(`http://localhost:3000/lessons/${item.product._id}`, {
+                                        method: 'PUT',
+                                        headers: {
+                                            'Content-Type': 'application/json'
+                                        },
+                                        body: JSON.stringify({ space: item.product.space })
+                                    });
+                                });
+                                // Show a success message to the customer and reset the checkout form
+                                alert("Congratulations! Your order has been placed successfully.");
+                                this.showCheckout = false;
+                                this.customer.name = '';
+                                this.customer.phone = '';
+                                this.cart = [];
+                            } else {
+                                // If the response is not okay, show an error message to the customer
+                                alert("An error occurred while placing the order. Please try again later.");
+                            }
+                        });
+                    }
+
+                }
+                ,
+                isDisabled(product) {
+                    return product.space === 0;
+                },
+                searchLessons() {
+                    fetch(`http://localhost:3000/lessons/search/${this.searchQuery}`)
+                        .then(response => {
+                            if (!response.ok) {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                            return response.json();
+                        })
+                        .then(result => {
+                            this.products = result;
+                            console.log(result);
+                            // update the state with the results here
+                        })
+                        .catch(error => {
+                            console.error(error);
+                        });
+                }
+
+
+
+            }
+        });
+    </script>
+
+
+</body>
+
+
+</html>

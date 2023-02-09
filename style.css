@@ -1,0 +1,27 @@
+/* li { display: inline-block; } */
+
+.navbar {
+    background-color: transparent;
+  }
+  
+  .navbar-brand, .font-weight-bold {
+    font-weight: bold;
+  }
+  
+  
+  
+
+.header{
+    text-align: center;
+}
+
+.card {
+    float: left;
+    margin-right: 20px;
+  }
+
+/* .spacing{
+display: grid;
+grid-template-columns: repeat(4, 1fr);
+column-gap: 12px;
+} */
