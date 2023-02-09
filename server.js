@@ -21,7 +21,7 @@ app.use((req, res, next) => {
 });
 
 
-app.use('/images', express.static(path.join(__dirname, '../images')))
+app.use('/images', express.static(path.join(__dirname, '/images')))
 
 app.use((req, res, next) =>{
     res.status(404).send('Image not found.')
